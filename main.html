@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Odontograma interactivo</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f6f6;--panel:#fff;--ink:#14282b;--mute:#5d7275;--line:#c9d6d7;--accent:#0e6b6f;--surf:#fdfefe;
+--caries:#d64545;--obt:#2f6fd0;--sel:#2c9a67;--fra:#e08a1e;--end:#7a4cc2;--cor:#c9a227}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1b1d;--panel:#16282b;--ink:#e6f0f0;--mute:#9bb1b3;--line:#2c4549;--accent:#4fc3c8;--surf:#1d3235;--caries:#ef6a6a;--obt:#5b9bf0;--sel:#4cc58d;--fra:#f0a746;--end:#a47be3;--cor:#e3c553}}
+:root[data-theme="dark"]{--bg:#0f1b1d;--panel:#16282b;--ink:#e6f0f0;--mute:#9bb1b3;--line:#2c4549;--accent:#4fc3c8;--surf:#1d3235;--caries:#ef6a6a;--obt:#5b9bf0;--sel:#4cc58d;--fra:#f0a746;--end:#a47be3;--cor:#e3c553}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:0 0 2px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+label{display:block;font-size:.85rem;color:var(--mute)}
+input,textarea{width:100%;margin-top:3px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+.tool{display:flex;align-items:center;gap:7px;padding:7px 11px;border:1.5px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;font-size:.9rem;cursor:pointer}
+.tool:focus-visible,.tooth polygon:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tool[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
+.sw{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.35);flex:none}
+.hint{font-size:.85rem;color:var(--mute);margin:10px 0 0}
+.chart{overflow-x:auto;padding-bottom:6px}
+.arch{margin:0 auto 4px}
+.arch h2{font-size:.85rem;font-weight:600;color:var(--mute);margin:10px 0 4px;text-align:center}
+.row{display:flex;justify-content:center;align-items:flex-start}
+.half{display:flex;gap:3px;min-width:0}
+.mid{width:2px;background:var(--line);margin:0 8px;border-radius:2px;align-self:stretch}
+.side{font-size:.8rem;color:var(--mute);align-self:center;width:62px;flex:none}
+.side.r{text-align:right}
+.tooth{display:flex;flex-direction:column;align-items:center;flex:1 1 40px;min-width:0;max-width:44px}
+.tooth.lo{flex-direction:column-reverse}
+.tooth svg{width:100%;height:auto;aspect-ratio:1;display:block}
+.tooth.tmp svg{width:86%}
+.num{font-size:.78rem;font-weight:600;color:var(--mute);line-height:1.5}
+.tooth.sel .num{background:var(--accent);color:#fff;border-radius:3px;padding:0 3px}
+.tooth polygon,.tooth rect.z{fill:var(--surf);stroke:var(--mute);stroke-width:1.2;cursor:pointer}
+.tooth polygon:hover,.tooth rect.z:hover{fill:var(--line)}
+.tooth .caries{fill:var(--caries)!important}.tooth .obt{fill:var(--obt)!important}
+.tooth .sel{fill:var(--sel)!important}.tooth .fra{fill:var(--fra)!important}
+.fade{opacity:.35}
+.ov{pointer-events:none;fill:none;stroke-linecap:round}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.stats h3{margin:0 0 8px;font-size:1rem}
+.idx{display:flex;gap:8px;flex-wrap:wrap}
+.idx div{flex:1;min-width:58px;text-align:center;border:1px solid var(--line);border-radius:8px;padding:6px 4px}
+.idx b{display:block;font-size:1.35rem;line-height:1.2}
+.idx span{font-size:.75rem;color:var(--mute)}
+.idx .tot{border-color:var(--accent)}
+.act{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{padding:8px 14px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--mute)}
+select{width:100%;margin-top:3px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+.wide{grid-column:1/-1}
+label small{font-weight:400}
+.sh{margin:0 0 10px;font-size:1rem}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px;font-size:.92rem}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:.8rem;color:var(--mute);font-weight:600}
+.n{text-align:right;white-space:nowrap}
+.pg{width:100px;margin:0;padding:4px 6px;text-align:right}
+.debe{color:var(--caries);font-weight:600}
+tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:0}
+.empty{color:var(--mute);text-align:center;padding:16px}
+.x{border:1px solid var(--line);background:transparent;color:var(--mute);border-radius:6px;padding:3px 8px;cursor:pointer;font:inherit;font-size:.8rem}
+.x.arm{background:var(--caries);color:#fff;border-color:var(--caries)}
+.wform{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-items:end;margin-top:14px}
+.wform .grow{grid-column:span 2}
+.err{color:var(--caries);font-size:.85rem;margin:6px 0 0;min-height:1em}
+#undo{display:inline-flex;align-items:center;gap:8px;font-size:.9rem;color:var(--mute)}
+.lr{display:none;justify-content:space-between;font-size:.72rem;color:var(--mute);margin:0 2px 2px}
+.detail{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.detail .tooth{flex:none;max-width:none;width:min(200px,50vw)}
+.detail .info{flex:1;min-width:170px}
+.detail h3{margin:0 0 6px;font-size:1.05rem}
+.detail ul{margin:0;padding-left:18px;color:var(--mute);font-size:.92rem}
+button,.tooth polygon,.tooth rect{touch-action:manipulation}
+.tool{min-height:38px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+@media(max-width:820px){.side{display:none}.lr{display:flex}}
+@media(max-width:700px){
+main{padding:14px 10px 32px}.panel{padding:12px 10px}h1{font-size:1.3rem}
+.toolbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.toolbar .hint{display:none}
+.tools{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.tool{flex:none}
+.mid{margin:0 4px}.num{font-size:.62rem}.half{gap:1px}
+.wform{grid-template-columns:1fr 1fr}.wform .btn{grid-column:1/-1;min-height:44px}
+table{min-width:0}
+thead{display:none}
+table,tbody,tfoot{display:block}
+tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;padding:10px 0;border-bottom:1px solid var(--line)}
+tbody td{display:flex;justify-content:space-between;align-items:center;gap:8px;border:0;padding:3px 0;text-align:right}
+tbody td::before{color:var(--mute);font-size:.8rem;text-align:left}
+tbody td:nth-child(1)::before{content:"Fecha"}
+tbody td:nth-child(2)::before{content:"Pieza"}
+tbody td:nth-child(4)::before{content:"Costo"}
+tbody td:nth-child(5)::before{content:"Pagado"}
+tbody td:nth-child(6)::before{content:"Saldo"}
+tbody td:nth-child(3){grid-column:1/-1;text-align:left}
+tbody td:nth-child(7){grid-column:1/-1;justify-content:flex-end}
+tbody td.empty{display:block;grid-column:1/-1;text-align:center}
+tbody td.empty::before{content:none}
+tfoot tr{display:grid;grid-template-columns:repeat(3,1fr);gap:2px 8px;padding-top:8px;border-top:2px solid var(--line)}
+tfoot td{display:block;border:0;padding:2px 0;text-align:right}
+tfoot td:first-child{grid-column:1/-1;text-align:left}
+tfoot td:nth-child(n+2)::before{display:block;font-size:.75rem;font-weight:400;color:var(--mute)}
+tfoot td:nth-child(2)::before{content:"Costo"}
+tfoot td:nth-child(3)::before{content:"Pagado"}
+tfoot td:nth-child(4)::before{content:"Saldo"}
+tfoot td:last-child{display:none}
+}
+@media print{.noprint{display:none}.pg{border:0;background:none;padding:0}.tools,.act,.hint{display:none}body{background:#fff}.panel{border-color:#999}}
+</style>
+</head>
+<body>
+<main>
+<h1>Odontograma</h1>
+<p class="sub">Dentición temporal y permanente · notación FDI. Toca una superficie para registrar su estado.</p>
+
+<section class="panel">
+<div class="fields">
+<label>Nombre del paciente<input id="pac" autocomplete="off"></label>
+<label>Tutor o padre <small>(opcional)</small><input id="tutor" placeholder="Ninguno" autocomplete="off"></label>
+<label>Edad<input id="edad" inputmode="numeric"></label>
+<label>Teléfono<input id="tel" type="tel"></label>
+<label>Domicilio<input id="dom"></label>
+<label>Profesión o actividad<input id="prof"></label>
+<label>Estado civil<select id="civil"><option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option><option>Divorciado/a</option><option>Viudo/a</option></select></label>
+<label class="wide">Motivo de consulta<textarea id="motivo" rows="2"></textarea></label>
+</div>
+</section>
+
+<section class="panel toolbar">
+<div class="tools" id="tools" role="group" aria-label="Herramientas"></div>
+<p class="hint">Las herramientas de color se aplican a una superficie. Ausente, extracción, corona y endodoncia se aplican al diente entero. Tocar de nuevo la misma marca la quita.</p>
+</section>
+
+<section class="panel chart" id="chart" aria-label="Odontograma"></section>
+<section class="panel detail" id="detail" aria-live="polite"></section>
+
+<section class="stats">
+<div class="panel"><h3>Dentición permanente · CPOD</h3><div class="idx" id="cpod"></div></div>
+<div class="panel"><h3>Dentición temporal · ceod</h3><div class="idx" id="ceod"></div></div>
+</section>
+
+<section class="panel">
+<h3 class="sh">Registro de trabajos y pagos</h3>
+<div class="tw"><table>
+<thead><tr><th>Fecha</th><th>Pieza</th><th>Diagnóstico o tratamiento</th><th class="n">Costo</th><th class="n">Pagado</th><th class="n">Saldo</th><th class="noprint"></th></tr></thead>
+<tbody id="wbody"></tbody><tfoot id="wtot"></tfoot>
+</table></div>
+<div class="wform noprint">
+<label>Fecha<input id="w-fecha" type="date"></label>
+<label>Pieza<input id="w-pieza" list="piezas" placeholder="Ej. 16" autocomplete="off"></label>
+<label class="grow">Diagnóstico o tratamiento<input id="w-desc" placeholder="Ej. Obturación con resina" autocomplete="off"></label>
+<label>Costo (Bs)<input id="w-costo" type="number" min="0" step="0.01"></label>
+<label>Pagado (Bs)<input id="w-pago" type="number" min="0" step="0.01"></label>
+<button class="btn" id="wadd">Registrar trabajo</button>
+</div>
+<datalist id="piezas"></datalist>
+<p class="err" id="werr" role="alert"></p>
+<p class="hint noprint">Saldo = costo menos lo pagado. Puedes corregir lo pagado directamente en la tabla cuando el paciente abone. Al tocar un diente en el odontograma, su número se copia en Pieza.</p>
+</section>
+
+<section class="panel">
+<label>Observaciones y plan de tratamiento<textarea id="obs" rows="3" placeholder="Hallazgos, diagnóstico, tratamiento propuesto…"></textarea></label>
+<div class="act">
+<button class="btn ghost" id="reset">Limpiar odontograma</button>
+<span id="undo" role="status"></span>
+</div>
+</section>
+</main>
+
+<script>
+const TOOLS=[
+ {id:'caries',n:'Caries',c:'var(--caries)',k:'s'},
+ {id:'obt',n:'Obturación',c:'var(--obt)',k:'s'},
+ {id:'sel',n:'Sellante',c:'var(--sel)',k:'s'},
+ {id:'fra',n:'Fractura',c:'var(--fra)',k:'s'},
+ {id:'aus',n:'Ausente',c:'#888',k:'w'},
+ {id:'ext',n:'Extracción indicada',c:'var(--caries)',k:'w'},
+ {id:'cor',n:'Corona',c:'var(--cor)',k:'w'},
+ {id:'end',n:'Endodoncia',c:'var(--end)',k:'w'},
+ {id:'sano',n:'Borrar',c:'var(--surf)',k:'e'}
+];
+const ARCHES=[
+ {t:'Temporales superiores',a:[55,54,53,52,51],b:[61,62,63,64,65],up:1,tmp:1},
+ {t:'Temporales inferiores',a:[85,84,83,82,81],b:[71,72,73,74,75],up:0,tmp:1},
+ {t:'Permanentes superiores',a:[18,17,16,15,14,13,12,11],b:[21,22,23,24,25,26,27,28],up:1},
+ {t:'Permanentes inferiores',a:[48,47,46,45,44,43,42,41],b:[31,32,33,34,35,36,37,38],up:0}
+];
+const SHAPES={T:'4,4 36,4 26,14 14,14',B:'4,36 36,36 26,26 14,26',L:'4,4 14,14 14,26 4,36',R:'36,4 26,14 26,26 36,36'};
+let tool='caries',cur=null,data={};
+try{data=JSON.parse(localStorage.getItem('odonto-data')||'{}')}catch(e){}
+const $=id=>document.getElementById(id);
+const save=()=>{try{localStorage.setItem('odonto-data',JSON.stringify(data))}catch(e){}};
+
+function surfName(t,z){
+ const q=Math.floor(t/10),up=(q===1||q===2||q===5||q===6),right=(q===1||q===4||q===5||q===8);
+ if(z==='T')return up?'Vestibular':'Lingual';
+ if(z==='B')return up?'Palatino':'Vestibular';
+ if(z==='C')return (t%10<=3)?'Incisal':'Oclusal';
+ return (z==='R')===right?'Mesial':'Distal';
+}
+function labels(t){const P={T:[20,9.5],B:[20,34],L:[8.5,21],R:[31.5,21],C:[20,21.5]};
+ const ab=n=>({Vestibular:'Vest',Palatino:'Pal',Lingual:'Ling',Mesial:'Mes',Distal:'Dis',Oclusal:'Ocl',Incisal:'Inc'}[n]);
+ return '<g style="pointer-events:none;font-size:3.4px;text-anchor:middle;fill:var(--ink);stroke:var(--surf);stroke-width:.7px;paint-order:stroke">'+Object.keys(P).map(z=>'<text x="'+P[z][0]+'" y="'+(P[z][1]+1)+'">'+ab(surfName(t,z))+'</text>').join('')+'</g>';}
+function drawDetail(){
+ const el=$('detail');
+ if(!cur){el.innerHTML='<p class="hint" style="margin:0">Toca un diente del odontograma para ampliarlo. Luego elige una herramienta y toca la superficie que quieras marcar.</p>';return;}
+ const d=data[cur]||{s:{},w:null};
+ const WN={aus:'Ausente',ext:'Extracción indicada',cor:'Corona',end:'Endodoncia'};
+ const TN={caries:'Caries',obt:'Obturación',sel:'Sellante',fra:'Fractura'};
+ const li=Object.keys(d.s).map(z=>'<li>'+surfName(cur,z)+': '+TN[d.s[z]]+'</li>').join('')+(d.w?'<li>'+WN[d.w]+'</li>':'');
+ el.innerHTML='<div class="tooth">'+toothSVG(cur,1)+'</div><div class="info"><h3>Diente '+cur+'</h3>'+(li?'<ul>'+li+'</ul>':'<p class="hint" style="margin:0">Sin marcas. Elige una herramienta y toca una superficie.</p>')+'</div>';
+}
+function toothSVG(t,lab){
+ const d=data[t]||{s:{},w:null};
+ let h='<svg viewBox="0 0 40 40" role="group" aria-label="Diente '+t+'"><g class="'+(d.w==='aus'?'fade':'')+'">';
+ for(const z in SHAPES)h+=poly(t,z,d,'<polygon');
+ h+=poly(t,'C',d,'<rect x="14" y="14" width="12" height="12"');
+ h+='</g>';if(lab)h+=labels(t);
+ if(d.w==='aus')h+='<path class="ov" stroke="var(--mute)" stroke-width="3" d="M5 5L35 35M35 5L5 35"/>';
+ if(d.w==='ext')h+='<path class="ov" stroke="var(--caries)" stroke-width="3" d="M5 5L35 35M35 5L5 35"/>';
+ if(d.w==='cor')h+='<circle class="ov" cx="20" cy="20" r="18" stroke="var(--cor)" stroke-width="3.5"/>';
+ if(d.w==='end')h+='<path class="ov" stroke="var(--end)" stroke-width="3.5" d="M20 3V37"/>';
+ return h+'</svg>';
+}
+function poly(t,z,d,tag){
+ const pts=SHAPES[z]?' points="'+SHAPES[z]+'"':'';
+ const st=d.s[z]||'';
+ const nm=surfName(t,z);
+ return tag+pts+' class="'+(z==='C'?'z ':'')+st+'" data-t="'+t+'" data-z="'+z+'" tabindex="0" role="button" aria-label="Diente '+t+', '+nm+'"><title>'+t+' · '+nm+'</title>'+(tag==='<polygon'?'</polygon>':'</rect>');
+}
+function render(){
+ let h='';
+ for(const A of ARCHES){
+  const mk=(list)=>list.map(t=>'<div class="tooth '+(A.up?'up':'lo')+(A.tmp?' tmp':'')+(cur===t?' sel':'')+'">'+toothSVG(t)+'<span class="num">'+t+'</span></div>').join('');
+  h+='<div class="arch"><h2>'+A.t+'</h2><div class="lr"><span>Derecha</span><span>Izquierda</span></div><div class="row"><span class="side r">Derecha</span><div class="half">'+mk(A.a)+'</div><span class="mid"></span><div class="half">'+mk(A.b)+'</div><span class="side">Izquierda</span></div></div>';
+ }
+ $('chart').innerHTML=h;
+ stats();drawDetail();
+}
+function stats(){
+ const calc=(lo,hi,tmp)=>{let C=0,P=0,O=0;
+  for(const k in data){const t=+k;if(t<lo||t>hi)continue;const d=data[k];
+   if(d.w==='aus'||d.w==='ext')P++;
+   else if(Object.values(d.s).includes('caries'))C++;
+   else if(d.w==='cor'||d.w==='end'||Object.values(d.s).includes('obt'))O++;}
+  return [C,P,O,C+P+O];};
+ const show=(id,v,l)=>$(id).innerHTML=['Cariados','Perdidos','Obturados'].map((n,i)=>'<div><b>'+v[i]+'</b><span>'+n+'</span></div>').join('')+'<div class="tot"><b>'+v[3]+'</b><span>'+l+'</span></div>';
+ show('cpod',calc(11,48),'CPOD');
+ show('ceod',calc(51,85),'ceod');
+}
+function apply(t,z){
+ const T=TOOLS.find(x=>x.id===tool);
+ const d=data[t]||(data[t]={s:{},w:null});
+ if(T.k==='e'){delete d.s[z];}
+ else if(T.k==='w'){d.w=(d.w===tool)?null:tool;}
+ else{d.s[z]=(d.s[z]===tool)?undefined:tool;if(!d.s[z])delete d.s[z];}
+ if(!d.w&&!Object.keys(d.s).length)delete data[t];
+ cur=t;save();render();$('w-pieza').value=t;
+}
+const small=matchMedia('(max-width:700px)');
+function hit(e,fromChart){const z=e.target.dataset&&e.target.dataset.z;if(!z)return null;const t=+e.target.dataset.t;
+ if(fromChart&&small.matches){cur=t;$('w-pieza').value=t;render();}else apply(t,z);
+ return {t,z};}
+function kd(box,fromChart){return e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.z){e.preventDefault();const r=hit(e,fromChart);const n=r&&box.querySelector('[data-t="'+r.t+'"][data-z="'+r.z+'"]');if(n)n.focus();}}}
+$('chart').addEventListener('click',e=>hit(e,true));
+$('detail').addEventListener('click',e=>hit(e,false));
+$('chart').addEventListener('keydown',kd($('chart'),true));
+$('detail').addEventListener('keydown',kd($('detail'),false));
+
+function drawTools(){
+ $('tools').innerHTML=TOOLS.map(T=>'<button class="tool" data-id="'+T.id+'" aria-pressed="'+(T.id===tool)+'"><span class="sw" style="background:'+T.c+'"></span>'+T.n+'</button>').join('');
+}
+$('tools').addEventListener('click',e=>{const b=e.target.closest('.tool');if(b){tool=b.dataset.id;drawTools();}});
+
+// Datos del paciente y observaciones
+const F=['pac','tutor','edad','tel','dom','prof','civil','motivo','obs'];
+F.forEach(id=>{try{const v=localStorage.getItem('odonto-'+id);if(v)$(id).value=v}catch(e){}
+ $(id).addEventListener('input',()=>{try{localStorage.setItem('odonto-'+id,$(id).value)}catch(e){}});});
+const today=new Date().toISOString().slice(0,10);
+$('w-fecha').value=today;
+$('piezas').innerHTML='<option value="General">'+ARCHES.flatMap(A=>A.a.concat(A.b)).sort((a,b)=>a-b).map(t=>'<option value="'+t+'">').join('');
+let works=[];try{works=JSON.parse(localStorage.getItem('odonto-works')||'[]')}catch(e){}
+const saveW=()=>{try{localStorage.setItem('odonto-works',JSON.stringify(works))}catch(e){}};
+const money=n=>'Bs '+(+n||0).toLocaleString('es-BO',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=f=>f.split('-').reverse().join('/');
+function drawWorks(){
+ let tc=0,tp=0;
+ $('wbody').innerHTML=works.length?works.map((w,i)=>{tc+=w.costo;tp+=w.pago;const s=w.costo-w.pago;
+  return '<tr><td>'+fmt(esc(w.fecha))+'</td><td>'+esc(w.pieza)+'</td><td>'+esc(w.desc)+'</td><td class="n">'+money(w.costo)+'</td><td class="n"><input class="pg" type="number" min="0" step="0.01" value="'+w.pago+'" data-i="'+i+'" aria-label="Pagado"></td><td class="n'+(s>0?' debe':'')+'">'+money(s)+'</td><td class="noprint"><button class="x" data-i="'+i+'" aria-label="Eliminar registro">Quitar</button></td></tr>';}).join(''):'<tr><td colspan="7" class="empty">Aún no hay trabajos registrados. Agrega el primero abajo.</td></tr>';
+ const st=tc-tp;
+ $('wtot').innerHTML='<tr><td colspan="3">Total</td><td class="n">'+money(tc)+'</td><td class="n">'+money(tp)+'</td><td class="n'+(st>0?' debe':'')+'">'+money(st)+'</td><td class="noprint"></td></tr>';
+}
+$('wadd').onclick=()=>{
+ const desc=$('w-desc').value.trim(),pieza=$('w-pieza').value.trim();
+ if(!pieza||!desc){$('werr').textContent='Indica la pieza y el diagnóstico o tratamiento.';return;}
+ $('werr').textContent='';
+ works.push({fecha:$('w-fecha').value||today,pieza,desc,costo:+$('w-costo').value||0,pago:+$('w-pago').value||0});
+ works.sort((a,b)=>a.fecha<b.fecha?-1:a.fecha>b.fecha?1:0);
+ ['w-desc','w-costo','w-pago'].forEach(id=>$(id).value='');
+ saveW();drawWorks();$('w-desc').focus();
+};
+$('wbody').addEventListener('change',e=>{if(e.target.classList.contains('pg')){works[+e.target.dataset.i].pago=+e.target.value||0;saveW();drawWorks();}});
+$('wbody').addEventListener('click',e=>{const b=e.target.closest('.x');if(!b)return;
+ if(b.classList.contains('arm')){works.splice(+b.dataset.i,1);saveW();drawWorks();}
+ else{b.classList.add('arm');b.textContent='¿Seguro?';setTimeout(()=>{b.classList.remove('arm');b.textContent='Quitar'},3000);}
+});
+drawWorks();
+
+let undoT;
+$('reset').onclick=()=>{
+ const backup=JSON.stringify(data),u=$('undo');
+ data={};cur=null;save();render();
+ u.innerHTML='Odontograma limpiado. <button class="btn ghost" id="undoBtn">Deshacer</button>';
+ $('undoBtn').onclick=()=>{data=JSON.parse(backup);save();render();u.textContent='';};
+ clearTimeout(undoT);undoT=setTimeout(()=>{u.textContent=''},8000);
+};
+drawTools();render();
+</script>
+</body>
+</html>
